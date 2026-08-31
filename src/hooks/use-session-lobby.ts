@@ -15,6 +15,7 @@ export function useSessionLobby(sessionId: string) {
   const [error, setError] = useState<string | null>(null)
   const snapshotRef = useRef<SessionSnapshot | null>(null)
   const refreshRequestRef = useRef(0)
+  const refreshAppliedRef = useRef(0)
 
   const refresh = useCallback(async () => {
     const requestId = ++refreshRequestRef.current
@@ -22,7 +23,8 @@ export function useSessionLobby(sessionId: string) {
       const next = await quizApi.snapshot(sessionId)
       // Realtime can trigger several snapshots at once. An older, slower
       // response must never overwrite a newer answer count.
-      if (requestId === refreshRequestRef.current) {
+      if (requestId > refreshAppliedRef.current) {
+        refreshAppliedRef.current = requestId
         snapshotRef.current = next
         setSnapshot(next)
         setError(null)
@@ -83,11 +85,20 @@ export function useSessionLobby(sessionId: string) {
 
     // Broadcasts make the UI feel live; this lightweight host-only check makes
     // the visible total self-healing if a mobile connection drops an event.
-    const countCheck = window.setInterval(() => {
-      void refresh().catch(() => undefined)
-    }, 800)
+    let disposed = false
+    let countCheck: number | undefined
 
-    return () => window.clearInterval(countCheck)
+    async function checkCount() {
+      await refresh().catch(() => undefined)
+      if (!disposed) countCheck = window.setTimeout(checkCount, 800)
+    }
+
+    countCheck = window.setTimeout(checkCount, 800)
+
+    return () => {
+      disposed = true
+      if (countCheck) window.clearTimeout(countCheck)
+    }
   }, [refresh, snapshot?.role, snapshot?.session.phase])
 
   return {

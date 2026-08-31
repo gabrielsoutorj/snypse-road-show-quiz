@@ -37,6 +37,10 @@ function HostLobby({ sessionId }: { sessionId: string }) {
   }, [snapshot])
   const joinUrlIsLocalOnly = isLoopbackHostname(window.location.hostname)
 
+  useEffect(() => {
+    setCommandError(null)
+  }, [snapshot?.session.phaseVersion])
+
   if (loading) return <LoadingPage message="Preparando o lobby…" />
   if (error || !snapshot) {
     return <ErrorPage title="Lobby indisponível" message={error ?? 'Sessão não encontrada.'} />
@@ -185,6 +189,7 @@ function HostQuestionControl({ snapshot, pending, error, onCommand }: HostQuesti
     snapshot.serverNow,
   )
   const autoCloseVersion = useRef<number | null>(null)
+  const onCommandRef = useRef(onCommand)
   const isOpen = snapshot.session.phase === 'question_open'
   const action = getHostFlowAction(
     snapshot.session.phase,
@@ -194,15 +199,19 @@ function HostQuestionControl({ snapshot, pending, error, onCommand }: HostQuesti
   )
 
   useEffect(() => {
+    onCommandRef.current = onCommand
+  }, [onCommand])
+
+  useEffect(() => {
     if (!isOpen || !expired || autoCloseVersion.current === snapshot.session.phaseVersion) return
     const version = snapshot.session.phaseVersion
     const settleTimer = window.setTimeout(() => {
       if (autoCloseVersion.current === version) return
       autoCloseVersion.current = version
-      void onCommand('close_answers')
+      void onCommandRef.current('close_answers')
     }, 2_200)
     return () => window.clearTimeout(settleTimer)
-  }, [expired, isOpen, onCommand, snapshot.session.phaseVersion])
+  }, [expired, isOpen, snapshot.session.phaseVersion])
 
   const phaseLabel = {
     question_open: 'Pergunta aberta',
