@@ -6,19 +6,21 @@ export function useCountdown(deadlineAt: string | null, serverNow: string) {
     () => calculateServerOffsetMs(serverNow),
     [serverNow],
   )
-  const [remainingMs, setRemainingMs] = useState(() =>
-    calculateRemainingMs(deadlineAt, serverOffsetMs),
-  )
+  const [clientNowMs, setClientNowMs] = useState(() => Date.now())
 
   useEffect(() => {
     function tick() {
-      setRemainingMs(calculateRemainingMs(deadlineAt, serverOffsetMs))
+      setClientNowMs(Date.now())
     }
 
     tick()
     const interval = window.setInterval(tick, 100)
     return () => window.clearInterval(interval)
   }, [deadlineAt, serverOffsetMs])
+
+  // Calculated during render so a new question can never inherit the expired
+  // value kept by the previous question for one React render.
+  const remainingMs = calculateRemainingMs(deadlineAt, serverOffsetMs, clientNowMs)
 
   return {
     remainingMs,
