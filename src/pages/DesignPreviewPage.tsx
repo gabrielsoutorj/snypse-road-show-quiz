@@ -7,6 +7,7 @@ import {
   ScreenRanking,
   ScreenResult,
 } from './ScreenLobbyPage'
+import { ParticipantQuestion } from './ParticipantLobbyPage'
 
 const question: QuestionSnapshot = {
   id: 'preview-question',
@@ -110,6 +111,47 @@ export function DesignPreviewPage() {
     }
     snapshot.reveal = { ...snapshot.reveal!, correctOptions: ['A', 'B', 'C', 'D'] }
     return <ScreenResult snapshot={snapshot} />
+  }
+  if (stage === 'mobile-question') {
+    const snapshot = previewSnapshot('question_open')
+    snapshot.role = 'participant'
+    snapshot.participant = ranking[0]
+    snapshot.question = {
+      ...question,
+      position: 12,
+      title: 'Quais afirmações sobre as soluções apresentadas no Road Show estão corretas?',
+      supportText: 'Selecione todas as respostas corretas.',
+      isMultiSelect: true,
+      durationSeconds: 35,
+      options: [
+        { id: 'a', label: 'A', text: 'A Smoot interpreta contexto e emoção em texto, imagem e vídeo.', position: 1 },
+        { id: 'b', label: 'B', text: 'A Magfi trabalha com curadoria, Brand Safety e publicidade nativa.', position: 2 },
+        { id: 'c', label: 'C', text: 'Telegram representa escolha e recorrência; Discord representa participação e conversa ativa.', position: 3 },
+        { id: 'd', label: 'D', text: 'Smoot conecta mídia ao contexto; Magfi conecta marcas a comunidades de afinidade.', position: 4 },
+      ],
+    }
+    return (
+      <ParticipantQuestion
+        snapshot={snapshot}
+        selected={[]}
+        draftSelections={['A', 'B', 'C', 'D']}
+        submitting={false}
+        submitError={null}
+        onSelect={() => undefined}
+        onSubmitMulti={() => undefined}
+      />
+    )
+  }
+  if (stage === 'mobile') {
+    return (
+      <main className="grid min-h-screen place-items-center bg-zinc-950 p-4">
+        <iframe
+          title="Prévia mobile"
+          src="./mobile-question"
+          className="h-[667px] w-[390px] max-w-full border border-white/20 bg-black"
+        />
+      </main>
+    )
   }
   return <Navigate to="/design-preview/lobby" replace />
 }

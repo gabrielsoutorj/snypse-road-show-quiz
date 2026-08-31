@@ -195,8 +195,13 @@ function HostQuestionControl({ snapshot, pending, error, onCommand }: HostQuesti
 
   useEffect(() => {
     if (!isOpen || !expired || autoCloseVersion.current === snapshot.session.phaseVersion) return
-    autoCloseVersion.current = snapshot.session.phaseVersion
-    void onCommand('close_answers')
+    const version = snapshot.session.phaseVersion
+    const settleTimer = window.setTimeout(() => {
+      if (autoCloseVersion.current === version) return
+      autoCloseVersion.current = version
+      void onCommand('close_answers')
+    }, 2_200)
+    return () => window.clearTimeout(settleTimer)
   }, [expired, isOpen, onCommand, snapshot.session.phaseVersion])
 
   const phaseLabel = {

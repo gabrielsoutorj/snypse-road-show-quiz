@@ -68,14 +68,16 @@ function ParticipantLobby({ sessionId }: { sessionId: string }) {
   if (snapshot.session.phase !== 'lobby' && question) {
     async function submit(labels: OptionLabel[]) {
       if (selected.length > 0 || submitting || labels.length === 0) return
+      const optimisticAnswer = { questionId: question!.id, labels }
       setSubmitting(true)
       setSubmitError(null)
+      setSubmittedAnswer(optimisticAnswer)
       try {
         await quizApi.submitAnswer(sessionId, labels)
-        setSubmittedAnswer({ questionId: question!.id, labels })
         setSubmitting(false)
         await refresh().catch(() => undefined)
       } catch (reason) {
+        setSubmittedAnswer((current) => current === optimisticAnswer ? null : current)
         setSubmitError(friendlyQuizError(reason))
         await refresh().catch(() => undefined)
       } finally {
@@ -232,7 +234,7 @@ type ParticipantQuestionProps = {
   onSubmitMulti: () => void
 }
 
-function ParticipantQuestion({
+export function ParticipantQuestion({
   snapshot,
   selected,
   draftSelections,
@@ -257,8 +259,8 @@ function ParticipantQuestion({
 
   return (
     <QuizBackdrop compact>
-      <section className="flex flex-1 flex-col py-5">
-        <div className="flex items-center justify-between gap-4">
+      <section className="participant-question-page flex flex-1 flex-col py-5">
+        <div className="participant-question-meta flex items-center justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.24em] text-pink-400">
               Pergunta {question.position} de {snapshot.questionCount}
@@ -268,12 +270,12 @@ function ParticipantQuestion({
           <QuestionTimer seconds={remainingSeconds} durationSeconds={question.durationSeconds} compact />
         </div>
 
-        <div className="mobile-neon-card mt-5">
+        <div className="participant-question-prompt mobile-neon-card mt-5">
           <h1 className="text-2xl font-black leading-tight">{question.title}</h1>
           {question.supportText && <p className="mt-3 text-sm leading-relaxed text-zinc-400">{question.supportText}</p>}
         </div>
 
-        <div className="mt-5">
+        <div className="participant-question-options mt-5">
           <QuestionOptions
             options={question.options}
             selected={visibleSelection}
@@ -293,7 +295,7 @@ function ParticipantQuestion({
           )}
         </div>
 
-        <div className={`answer-status mt-5 ${selected.length > 0 ? 'answer-status-confirmed' : ''}`}>
+        <div className={`participant-answer-status answer-status mt-5 ${selected.length > 0 ? 'answer-status-confirmed' : ''}`}>
           <span className="answer-status-icon">{selected.length > 0 ? '✓' : expired ? '×' : '!'}</span>
           <div>
             <p className="font-black uppercase tracking-[0.12em]">{submitting ? 'Enviando…' : status}</p>

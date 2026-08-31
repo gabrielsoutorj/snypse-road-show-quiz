@@ -9,7 +9,7 @@ type Props = {
 
 export function QuizBackdrop({ children, compact = false, stage }: Props) {
   return (
-    <main className="quiz-backdrop relative min-h-screen overflow-hidden bg-black text-white">
+    <main className={`quiz-backdrop ${compact ? 'quiz-backdrop-compact' : ''} relative min-h-screen overflow-hidden bg-black text-white`}>
       <div className="neon-orb neon-orb-pink" />
       <div className="neon-orb neon-orb-blue" />
       <div className="digital-grid" />
@@ -17,7 +17,7 @@ export function QuizBackdrop({ children, compact = false, stage }: Props) {
       <DigitalWaves />
 
       <div
-        className={`relative z-10 mx-auto flex min-h-screen w-full flex-col ${
+        className={`quiz-shell relative z-10 mx-auto flex min-h-screen w-full flex-col ${
           compact ? 'max-w-lg px-5 py-6 sm:py-9' : 'max-w-[1600px] px-6 py-6 lg:px-12 lg:py-8'
         }`}
       >

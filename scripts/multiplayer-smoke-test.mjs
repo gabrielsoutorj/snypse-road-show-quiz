@@ -125,6 +125,20 @@ async function main() {
       )
     }
 
+    if (snapshot.question.isMultiSelect) {
+      const expectedAll = participantCount
+      const expectedEven = Math.ceil(participantCount / 2)
+      const expectedCounts = { A: expectedAll, B: expectedAll, C: expectedEven, D: expectedEven }
+      for (const [label, expected] of Object.entries(expectedCounts)) {
+        const received = snapshot.result?.counts?.[label]
+        if (received !== expected) {
+          throw new Error(
+            `Pergunta ${questionIndex + 1}, opção ${label}: esperados ${expected} votos; recebidos ${received ?? 0}.`,
+          )
+        }
+      }
+    }
+
     for (const command of ['close_answers', 'reveal_answer']) {
       await quizApi(host, {
         action: 'host-command',
