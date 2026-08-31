@@ -193,7 +193,11 @@ export function ScreenPodium({
           <p className="screen-display text-[6rem] font-black uppercase leading-[0.86] xl:text-[8rem]">Pódio</p>
           <p className="screen-display neon-title mt-3 text-[5rem] font-black uppercase leading-none xl:text-[7rem]">Final</p>
           <div className="mt-8 h-px w-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400" />
-          <p className="mt-7 text-2xl font-light text-zinc-300">Parabéns aos três primeiros colocados.</p>
+          <p className="mt-7 text-2xl font-light text-zinc-300">
+            {(snapshot.ranking?.length ?? 0) === 1
+              ? 'Parabéns ao grande vencedor.'
+              : 'Parabéns aos três primeiros colocados.'}
+          </p>
         </aside>
         <div>
           <PodiumBoard ranking={snapshot.ranking ?? []} />

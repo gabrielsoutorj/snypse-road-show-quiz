@@ -249,7 +249,7 @@ function HostQuestionControl({ snapshot, pending, error, onCommand }: HostQuesti
             <div className="flex flex-1 flex-col">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-pink-400">Pódio final</p>
               <h1 className="mt-2 text-5xl font-black uppercase">Vencedores</h1>
-              <div className="mt-auto"><PodiumBoard ranking={snapshot.ranking ?? []} /></div>
+              <div className="host-podium-shell"><PodiumBoard ranking={snapshot.ranking ?? []} /></div>
             </div>
           )}
         </div>
@@ -258,11 +258,21 @@ function HostQuestionControl({ snapshot, pending, error, onCommand }: HostQuesti
           <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-400">Controle da rodada</p>
           <div className="mt-8 text-center">
             <p className="text-3xl font-black uppercase">{phaseLabel}</p>
-            <p className="mt-6 text-7xl font-black tabular-nums">{snapshot.answerCount ?? 0}</p>
-            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-zinc-500">respostas na pergunta</p>
-            <p className="mt-5 text-sm text-zinc-400">
-              de {snapshot.participants?.length ?? 0} participantes
-            </p>
+            {snapshot.session.phase === 'podium' || snapshot.session.phase === 'ended' ? (
+              <div className="host-finale-summary">
+                <span>★</span>
+                <p>Vencedores no telão</p>
+                <small>Parabéns aos primeiros colocados</small>
+              </div>
+            ) : (
+              <>
+                <p className="mt-6 text-7xl font-black tabular-nums">{snapshot.answerCount ?? 0}</p>
+                <p className="mt-2 text-sm uppercase tracking-[0.18em] text-zinc-500">respostas na pergunta</p>
+                <p className="mt-5 text-sm text-zinc-400">
+                  de {snapshot.participants?.length ?? 0} participantes
+                </p>
+              </>
+            )}
           </div>
 
           <div className="mt-auto pt-8">

@@ -89,5 +89,27 @@ export function DesignPreviewPage() {
   if (stage === 'result') return <ScreenResult snapshot={previewSnapshot('answer_reveal')} />
   if (stage === 'ranking') return <ScreenRanking snapshot={previewSnapshot('ranking')} />
   if (stage === 'podium') return <ScreenPodium snapshot={previewSnapshot('podium')} />
+  if (stage === 'podium-solo') {
+    const snapshot = previewSnapshot('podium')
+    snapshot.ranking = ranking.slice(0, 1)
+    return <ScreenPodium snapshot={snapshot} />
+  }
+  if (stage === 'result-long') {
+    const snapshot = previewSnapshot('answer_reveal')
+    snapshot.question = {
+      ...question,
+      position: 12,
+      title: 'Quais afirmações sobre as soluções apresentadas no Road Show estão corretas?',
+      isMultiSelect: true,
+      options: [
+        { id: 'a', label: 'A', text: 'A Smoot consegue interpretar contexto e emoção em texto, imagem e vídeo.', position: 1 },
+        { id: 'b', label: 'B', text: 'A Magfi trabalha com curadoria e verificação de comunidades, Brand Safety e publicidade nativa.', position: 2 },
+        { id: 'c', label: 'C', text: 'No Telegram, a marca entra em um ambiente de escolha e recorrência, enquanto no Discord entra em um ambiente de participação e conversa ativa.', position: 3 },
+        { id: 'd', label: 'D', text: 'Smoot e Magfi atuam de forma complementar: uma conecta mídia ao contexto e ao momento, enquanto a outra conecta marcas a verticais e comunidades de afinidade.', position: 4 },
+      ],
+    }
+    snapshot.reveal = { ...snapshot.reveal!, correctOptions: ['A', 'B', 'C', 'D'] }
+    return <ScreenResult snapshot={snapshot} />
+  }
   return <Navigate to="/design-preview/lobby" replace />
 }

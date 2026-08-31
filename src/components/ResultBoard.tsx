@@ -22,9 +22,9 @@ export function ResultBoard({ question, result, reveal }: Props) {
             <div key={option.id} className={`result-row ${isCorrect ? 'result-row-correct' : ''}`}>
               <span className="result-label">{option.label}</span>
               <div className="min-w-0 flex-1">
-                <div className="flex items-end justify-between gap-4">
-                  <p className="truncate text-lg font-black text-white">{option.text}</p>
-                  <p className="text-2xl font-black tabular-nums">{percentage}%</p>
+                <div className="result-copy-row">
+                  <p className="result-answer-text">{option.text}</p>
+                  <p className="result-percentage">{percentage}%</p>
                 </div>
                 <div className="result-track mt-3">
                   <span style={{ width: `${percentage}%` }} />
