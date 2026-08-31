@@ -29,11 +29,11 @@ Os Builds 1–6 contêm:
 - contagem de respostas ao vivo e pontuação calculada no encerramento.
 - resultado percentual da sala sem antecipar a alternativa correta;
 - reveal controlado da resposta correta e do insight editorial;
-- ranking parcial automático nos checkpoints das perguntas 2, 4 e 6;
+- ranking parcial nos checkpoints das perguntas 4 e 8;
 - pódio final com os três primeiros colocados;
 - telas de acompanhamento e pontuação acumulada no celular.
 - identidade visual final baseada nas cinco telas aprovadas;
-- títulos condensados de alto impacto e assinatura das três marcas;
+- títulos condensados de alto impacto e assinatura Snypse;
 - ondas digitais, partículas, gradientes e contornos neon responsivos;
 - régua visual de progresso entre lobby, quiz, ranking e pódio;
 - adaptação das telas de telão para resoluções 16:9, incluindo 1280 × 720.
@@ -43,7 +43,7 @@ Os Builds 1–6 contêm:
 - comando `pnpm dev:lan` para servir o frontend aos celulares na mesma rede;
 - alerta quando o QR Code está usando `localhost` ou `127.0.0.1`;
 - ensaio automatizado com até 100 participantes via `pnpm test:multi`;
-- validação das oito perguntas, 160 respostas no cenário padrão, Realtime, ranking e pódio;
+- validação das 12 perguntas, incluindo seleção múltipla, Realtime, ranking e pódio;
 - checklist operacional em [`docs/event-operation.md`](docs/event-operation.md).
 - projeto Supabase hospedado vinculado e configurado;
 - quatro migrations aplicadas e `quiz-api` publicada;
@@ -53,6 +53,8 @@ Os Builds 1–6 contêm:
 Projeto Supabase ativo: `snypse-road-show-quiz`.
 
 A especificação técnica consolidada está em [`docs/architecture.md`](docs/architecture.md).
+
+Para alterar textos, alternativas, tempo e respostas corretas sem republicar o site, consulte [`docs/editing-questions.md`](docs/editing-questions.md).
 
 ## Configuração
 

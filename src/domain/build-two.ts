@@ -37,6 +37,7 @@ export type QuestionSnapshot = {
   supportText: string | null
   durationSeconds: number
   showRankingAfter: boolean
+  isMultiSelect: boolean
   options: QuestionOption[]
 }
 
@@ -49,6 +50,7 @@ export type AnswerReceipt = {
 export type OwnAnswer = {
   id: string
   option_id: string
+  selected_options: OptionLabel[]
   submitted_at: string
   response_ms: number
 }
@@ -59,7 +61,7 @@ export type QuestionResult = {
 }
 
 export type AnswerReveal = {
-  correctOption: OptionLabel
+  correctOptions: OptionLabel[]
   insightTitle: string | null
   insightBody: string | null
 }

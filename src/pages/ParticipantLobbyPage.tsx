@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { ErrorPage, LoadingPage } from '../components/PageState'
 import { ParticipantAvatar } from '../components/ParticipantAvatar'
@@ -24,9 +24,17 @@ function ParticipantLobby({ sessionId }: { sessionId: string }) {
   const [submitting, setSubmitting] = useState(false)
   const [submittedAnswer, setSubmittedAnswer] = useState<{
     questionId: string
-    label: OptionLabel
+    labels: OptionLabel[]
   } | null>(null)
+  const [draftSelections, setDraftSelections] = useState<OptionLabel[]>([])
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const activeQuestionId = snapshot?.question?.id
+  useEffect(() => {
+    setSubmitting(false)
+    setSubmitError(null)
+    setDraftSelections([])
+  }, [activeQuestionId])
 
   if (loading) return <LoadingPage />
   if (error || !snapshot) {
@@ -38,11 +46,17 @@ function ParticipantLobby({ sessionId }: { sessionId: string }) {
 
   const question = snapshot.question
   const selectedFromSnapshot = question && snapshot.ownAnswer
-    ? question.options.find((option) => option.id === snapshot.ownAnswer?.option_id)?.label ?? null
-    : null
-  const selected = selectedFromSnapshot ?? (
-    submittedAnswer && submittedAnswer.questionId === question?.id ? submittedAnswer.label : null
-  )
+    ? snapshot.ownAnswer.selected_options ?? (
+        question.options
+          .filter((option) => option.id === snapshot.ownAnswer?.option_id)
+          .map((option) => option.label)
+      )
+    : []
+  const selected = selectedFromSnapshot.length > 0
+    ? selectedFromSnapshot
+    : submittedAnswer && submittedAnswer.questionId === question?.id
+      ? submittedAnswer.labels
+      : []
 
   if (
     question &&
@@ -52,28 +66,41 @@ function ParticipantLobby({ sessionId }: { sessionId: string }) {
   }
 
   if (snapshot.session.phase !== 'lobby' && question) {
+    async function submit(labels: OptionLabel[]) {
+      if (selected.length > 0 || submitting || labels.length === 0) return
+      setSubmitting(true)
+      setSubmitError(null)
+      try {
+        await quizApi.submitAnswer(sessionId, labels)
+        setSubmittedAnswer({ questionId: question!.id, labels })
+        setSubmitting(false)
+        await refresh().catch(() => undefined)
+      } catch (reason) {
+        setSubmitError(friendlyQuizError(reason))
+        await refresh().catch(() => undefined)
+      } finally {
+        setSubmitting(false)
+      }
+    }
+
     return (
       <ParticipantQuestion
         snapshot={snapshot}
         selected={selected}
+        draftSelections={draftSelections}
         submitting={submitting}
         submitError={submitError}
-        onSelect={async (label) => {
-          if (selected || submitting) return
-          setSubmitting(true)
-          setSubmitError(null)
-          try {
-            await quizApi.submitAnswer(sessionId, label)
-            setSubmittedAnswer({ questionId: question.id, label })
-            setSubmitting(false)
-            await refresh().catch(() => undefined)
-          } catch (reason) {
-            setSubmitError(friendlyQuizError(reason))
-            await refresh().catch(() => undefined)
-          } finally {
-            setSubmitting(false)
+        onSelect={(label) => {
+          if (selected.length > 0 || submitting) return
+          if (question.isMultiSelect) {
+            setDraftSelections((current) => current.includes(label)
+              ? current.filter((item) => item !== label)
+              : [...current, label])
+            return
           }
+          void submit([label])
         }}
+        onSubmitMulti={() => submit(draftSelections)}
       />
     )
   }
@@ -197,18 +224,22 @@ function ParticipantStage({
 
 type ParticipantQuestionProps = {
   snapshot: NonNullable<ReturnType<typeof useSessionLobby>['snapshot']>
-  selected: OptionLabel | null
+  selected: OptionLabel[]
+  draftSelections: OptionLabel[]
   submitting: boolean
   submitError: string | null
-  onSelect: (label: OptionLabel) => Promise<void>
+  onSelect: (label: OptionLabel) => void
+  onSubmitMulti: () => void
 }
 
 function ParticipantQuestion({
   snapshot,
   selected,
+  draftSelections,
   submitting,
   submitError,
   onSelect,
+  onSubmitMulti,
 }: ParticipantQuestionProps) {
   const question = snapshot.question!
   const { remainingSeconds, expired } = useCountdown(
@@ -217,10 +248,12 @@ function ParticipantQuestion({
   )
   const isOpen = snapshot.session.phase === 'question_open' && !expired
   const status = useMemo(() => {
-    if (selected) return 'Resposta enviada'
+    if (selected.length > 0) return 'Resposta enviada'
     if (!isOpen) return 'Respostas encerradas'
     return 'Escolha uma alternativa'
-  }, [isOpen, selected])
+  }, [isOpen, selected.length])
+
+  const visibleSelection = selected.length > 0 ? selected : draftSelections
 
   return (
     <QuizBackdrop compact>
@@ -243,19 +276,33 @@ function ParticipantQuestion({
         <div className="mt-5">
           <QuestionOptions
             options={question.options}
-            selected={selected}
+            selected={visibleSelection}
             interactive
-            disabled={!isOpen || Boolean(selected) || submitting}
-            onSelect={(label) => void onSelect(label)}
+            disabled={!isOpen || selected.length > 0 || submitting}
+            onSelect={onSelect}
           />
+          {question.isMultiSelect && selected.length === 0 && (
+            <button
+              type="button"
+              className="primary-action mt-4 w-full"
+              disabled={!isOpen || submitting || draftSelections.length === 0}
+              onClick={onSubmitMulti}
+            >
+              {submitting ? 'Enviando…' : `Confirmar ${draftSelections.length || ''} ${draftSelections.length === 1 ? 'resposta' : 'respostas'}`}
+            </button>
+          )}
         </div>
 
-        <div className={`answer-status mt-5 ${selected ? 'answer-status-confirmed' : ''}`}>
-          <span className="answer-status-icon">{selected ? '✓' : expired ? '×' : '!'}</span>
+        <div className={`answer-status mt-5 ${selected.length > 0 ? 'answer-status-confirmed' : ''}`}>
+          <span className="answer-status-icon">{selected.length > 0 ? '✓' : expired ? '×' : '!'}</span>
           <div>
             <p className="font-black uppercase tracking-[0.12em]">{submitting ? 'Enviando…' : status}</p>
             <p className="mt-1 text-xs text-zinc-500">
-              {selected ? `Alternativa ${selected} registrada. Aguarde a próxima etapa.` : 'Depois de enviada, a resposta não pode ser alterada.'}
+              {selected.length > 0
+                ? `Alternativa${selected.length > 1 ? 's' : ''} ${selected.join(' + ')} registrada${selected.length > 1 ? 's' : ''}. Aguarde a próxima etapa.`
+                : question.isMultiSelect
+                  ? 'Selecione todas as alternativas que considerar corretas e confirme.'
+                  : 'Depois de enviada, a resposta não pode ser alterada.'}
             </p>
           </div>
         </div>

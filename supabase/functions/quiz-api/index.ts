@@ -14,6 +14,7 @@ type RequestBody = {
   nickname?: string
   sessionId?: string
   option?: 'A' | 'B' | 'C' | 'D'
+  options?: Array<'A' | 'B' | 'C' | 'D'>
   command?:
     | 'start_question'
     | 'close_answers'
@@ -130,7 +131,7 @@ async function createSnapshot(
   const { data: question, error: questionError } = await admin
     .from('questions')
     .select(
-      'id, position, title, support_text, insight_title, insight_body, duration_seconds, show_ranking_after',
+      'id, position, title, support_text, insight_title, insight_body, duration_seconds, show_ranking_after, is_multi_select, correct_options',
     )
     .eq('id', session.current_question_id)
     .single()
@@ -152,13 +153,14 @@ async function createSnapshot(
     supportText: question.support_text,
     durationSeconds: question.duration_seconds,
     showRankingAfter: question.show_ranking_after,
+    isMultiSelect: question.is_multi_select,
     options: options ?? [],
   }
 
   if (participant) {
     const { data: answer } = await admin
       .from('answers')
-      .select('id, option_id, submitted_at, response_ms')
+      .select('id, option_id, selected_options, submitted_at, response_ms')
       .eq('session_id', sessionId)
       .eq('question_id', question.id)
       .eq('participant_id', participant.id)
@@ -171,7 +173,7 @@ async function createSnapshot(
 
   const { data: answers, error: answersError } = await admin
     .from('answers')
-    .select('option_id')
+    .select('option_id, selected_options')
     .eq('session_id', sessionId)
     .eq('question_id', question.id)
 
@@ -180,8 +182,12 @@ async function createSnapshot(
   const counts = Object.fromEntries((options ?? []).map((option) => [option.label, 0]))
   const labelsById = new Map((options ?? []).map((option) => [option.id, option.label]))
   for (const answer of answers ?? []) {
-    const label = labelsById.get(answer.option_id)
-    if (label) counts[label] += 1
+    const selectedLabels = answer.selected_options?.length
+      ? answer.selected_options
+      : [labelsById.get(answer.option_id)].filter(Boolean)
+    for (const label of selectedLabels) {
+      if (label && label in counts) counts[label] += 1
+    }
   }
 
   snapshot.answerCount = answers?.length ?? 0
@@ -192,16 +198,8 @@ async function createSnapshot(
 
   const revealPhases = new Set(['answer_reveal', 'ranking', 'podium', 'ended'])
   if (revealPhases.has(session.phase)) {
-    const { data: correctOption, error: correctError } = await admin
-      .from('question_options')
-      .select('label')
-      .eq('question_id', question.id)
-      .eq('is_correct', true)
-      .single()
-
-    if (correctError || !correctOption) throw new Error('CORRECT_OPTION_NOT_FOUND')
     snapshot.reveal = {
-      correctOption: correctOption.label,
+      correctOptions: question.correct_options,
       insightTitle: question.insight_title,
       insightBody: question.insight_body,
     }
@@ -260,14 +258,19 @@ Deno.serve(async (request) => {
     const sessionId = requiredString(body.sessionId, 'session_id')
 
     if (action === 'submit-answer') {
-      if (!body.option || !['A', 'B', 'C', 'D'].includes(body.option)) {
+      const selectedOptions = body.options ?? (body.option ? [body.option] : [])
+      if (
+        selectedOptions.length === 0 ||
+        selectedOptions.length > 4 ||
+        selectedOptions.some((option) => !['A', 'B', 'C', 'D'].includes(option))
+      ) {
         throw new Error('INVALID_OPTION')
       }
 
-      const { data, error } = await admin.rpc('submit_quiz_answer', {
+      const { data, error } = await admin.rpc('submit_quiz_answer_v2', {
         p_session_id: sessionId,
         p_user_id: user.id,
-        p_option: body.option,
+        p_options: selectedOptions,
       })
       if (error) throw error
       return jsonResponse({ data: Array.isArray(data) ? data[0] : data })
@@ -278,22 +281,30 @@ Deno.serve(async (request) => {
         throw new Error('INVALID_HOST_COMMAND')
       }
 
-      const rpc =
-        body.command === 'close_answers'
-          ? admin.rpc('close_quiz_question', {
-              p_session_id: sessionId,
-              p_actor_user_id: user.id,
-              p_expected_version: body.expectedVersion,
-              p_force: true,
-            })
-          : admin.rpc('transition_quiz_session', {
+      if (body.command === 'close_answers') {
+        const { data: closed, error: closeError } = await admin.rpc('close_quiz_question', {
+          p_session_id: sessionId,
+          p_actor_user_id: user.id,
+          p_expected_version: body.expectedVersion,
+          p_force: true,
+        })
+        if (closeError) throw closeError
+        const { data, error } = await admin.rpc('transition_quiz_session', {
+          p_session_id: sessionId,
+          p_actor_user_id: user.id,
+          p_expected_version: closed.phase_version,
+          p_command: 'show_result',
+        })
+        if (error) throw error
+        return jsonResponse({ data })
+      }
+
+      const { data, error } = await admin.rpc('transition_quiz_session', {
               p_session_id: sessionId,
               p_actor_user_id: user.id,
               p_expected_version: body.expectedVersion,
               p_command: body.command,
             })
-
-      const { data, error } = await rpc
       if (error) throw error
       return jsonResponse({ data })
     }

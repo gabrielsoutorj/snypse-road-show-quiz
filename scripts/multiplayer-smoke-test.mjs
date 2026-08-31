@@ -111,7 +111,9 @@ async function main() {
         quizApi(instance, {
           action: 'submit-answer',
           sessionId: session.id,
-          option: labels[(participantIndex + questionIndex) % labels.length],
+          options: snapshot.question.isMultiSelect
+            ? (participantIndex % 2 === 0 ? labels : ['A', 'B'])
+            : [labels[(participantIndex + questionIndex) % labels.length]],
         }),
       ),
     )
@@ -123,7 +125,7 @@ async function main() {
       )
     }
 
-    for (const command of ['close_answers', 'show_result', 'reveal_answer']) {
+    for (const command of ['close_answers', 'reveal_answer']) {
       await quizApi(host, {
         action: 'host-command',
         sessionId: session.id,
@@ -133,7 +135,7 @@ async function main() {
       snapshot = await quizApi(host, { action: 'snapshot', sessionId: session.id })
     }
 
-    if (snapshot.result.totalAnswers !== participantCount || !snapshot.reveal.correctOption) {
+    if (snapshot.result.totalAnswers !== participantCount || !snapshot.reveal.correctOptions?.length) {
       throw new Error(`Pergunta ${questionIndex + 1}: resultado ou reveal incompleto.`)
     }
 
@@ -177,7 +179,7 @@ async function main() {
   await host.removeChannel(channel)
   if (broadcastCount === 0) throw new Error('Nenhum evento Realtime foi recebido.')
 
-  console.log(`Ensaio aprovado: 8 perguntas, ${participantCount * 8} respostas e ${broadcastCount} eventos Realtime.`)
+  console.log(`Ensaio aprovado: ${snapshot.questionCount} perguntas, ${participantCount * snapshot.questionCount} respostas e ${broadcastCount} eventos Realtime.`)
 }
 
 main().catch((error) => {

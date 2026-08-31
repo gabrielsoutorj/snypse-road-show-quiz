@@ -17,7 +17,7 @@ export function ResultBoard({ question, result, reveal }: Props) {
         {question.options.map((option) => {
           const count = result.counts[option.label] ?? 0
           const percentage = calculateAnswerPercentage(count, result.totalAnswers)
-          const isCorrect = reveal?.correctOption === option.label
+          const isCorrect = reveal?.correctOptions.includes(option.label) ?? false
           return (
             <div key={option.id} className={`result-row ${isCorrect ? 'result-row-correct' : ''}`}>
               <span className="result-label">{option.label}</span>

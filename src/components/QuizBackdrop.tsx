@@ -32,16 +32,8 @@ export function QuizBackdrop({ children, compact = false, stage }: Props) {
 function BrandHeader({ compact }: { compact: boolean }) {
   return (
     <header className={`brand-header ${compact ? 'brand-header-compact' : ''}`}>
-      <div className="brand-signature" aria-label="Snypse, magfiADS e smootAI">
+      <div className="brand-signature" aria-label="Snypse">
         <span className="brand-snypse">Snypse</span>
-        {!compact && (
-          <>
-            <span className="brand-separator">×</span>
-            <span className="brand-magfi">magfi<span>ADS</span></span>
-            <span className="brand-separator">×</span>
-            <span className="brand-smoot">smoot<span>AI</span></span>
-          </>
-        )}
       </div>
       <p className="brand-event">Road Show · H2 2026</p>
     </header>

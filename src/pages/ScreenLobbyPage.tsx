@@ -133,9 +133,9 @@ export function ScreenResult({
   snapshot: NonNullable<ReturnType<typeof useSessionLobby>['snapshot']>
 }) {
   const question = snapshot.question!
-  const revealedOption = snapshot.reveal
-    ? question.options.find((option) => option.label === snapshot.reveal?.correctOption)
-    : null
+  const revealedOptions = snapshot.reveal
+    ? question.options.filter((option) => snapshot.reveal?.correctOptions.includes(option.label))
+    : []
 
   return (
     <QuizBackdrop stage="quiz">
@@ -145,7 +145,7 @@ export function ScreenResult({
             {snapshot.reveal ? 'Resposta' : 'Resultado'}
           </p>
           <p className="screen-display neon-title mt-3 break-words text-5xl font-black uppercase leading-none xl:text-7xl">
-            {revealedOption?.text ?? `Pergunta ${question.position}`}
+            {revealedOptions.length === 1 ? revealedOptions[0].text : revealedOptions.map((option) => option.label).join(' + ') || `Pergunta ${question.position}`}
           </p>
           <div className="mt-7 h-px w-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400" />
           <p className="mt-7 text-2xl font-light leading-snug text-zinc-300">

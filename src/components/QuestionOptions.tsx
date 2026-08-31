@@ -3,7 +3,7 @@ import type { QuestionOption } from '../domain/build-two'
 
 type Props = {
   options: QuestionOption[]
-  selected?: OptionLabel | null
+  selected?: OptionLabel | OptionLabel[] | null
   disabled?: boolean
   interactive?: boolean
   onSelect?: (label: OptionLabel) => void
@@ -21,7 +21,9 @@ export function QuestionOptions({
   return (
     <div className={`question-options-grid ${screen ? 'question-options-screen' : ''}`}>
       {options.map((option) => {
-        const isSelected = selected === option.label
+        const isSelected = Array.isArray(selected)
+          ? selected.includes(option.label)
+          : selected === option.label
         return (
           <button
             key={option.id}

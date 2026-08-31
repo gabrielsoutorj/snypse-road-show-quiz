@@ -45,8 +45,8 @@ export const quizApi = {
     }),
   joinSession: (pin: string, nickname: string) =>
     callQuizApi<JoinedParticipant>({ action: 'join-session', pin, nickname }),
-  submitAnswer: (sessionId: string, option: OptionLabel) =>
-    callQuizApi<AnswerReceipt>({ action: 'submit-answer', sessionId, option }),
+  submitAnswer: (sessionId: string, options: OptionLabel[]) =>
+    callQuizApi<AnswerReceipt>({ action: 'submit-answer', sessionId, options }),
   hostCommand: (
     sessionId: string,
     command: HostCommand | 'close_answers',

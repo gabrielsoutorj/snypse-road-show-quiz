@@ -15,6 +15,7 @@ const question: QuestionSnapshot = {
   supportText: 'Onde a marca entra como parte da conversa?',
   durationSeconds: 20,
   showRankingAfter: false,
+  isMultiSelect: false,
   options: [
     { id: 'a', label: 'A', text: 'Instagram feed', position: 1 },
     { id: 'b', label: 'B', text: 'Discord', position: 2 },
@@ -56,12 +57,12 @@ function previewSnapshot(phase: SessionSnapshot['session']['phase']): SessionSna
     },
     participant: null,
     participants: ranking,
-    questionCount: 8,
+    questionCount: 12,
     question,
     answerCount: 87,
     result: { totalAnswers: 100, counts: { A: 12, B: 62, C: 17, D: 9 } },
     reveal: {
-      correctOption: 'B',
+      correctOptions: ['B'],
       insightTitle: 'Insight',
       insightBody: 'No Discord, a marca entra no fluxo da conversa e participa de um consumo mais ativo — não de um scroll frio.',
     },
